@@ -1,0 +1,5 @@
+api_url: "api_url"
+api_token: "api_token"
+filters:
+  team: "{Scrum Board}: {Current sprint}"
+  me: "{Scrum Board}: {Current sprint} #me"
