@@ -6,15 +6,27 @@ using Scrummy.Services;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-var filterName = args.FirstOrDefault(a => a.StartsWith("--filter=")).Split("=").Last();
+var filterName = Cli.GetRequiredArgument(args, "filter");
+var configFileName = Cli.GetOptionalArgument(args, "config") ?? "config.yaml";
+var shouldSnap = Cli.HasFlag(args, "snap");
 
-var rawConfig = await File.ReadAllTextAsync("config.yaml");
+if (!File.Exists(configFileName))
+{
+    System.Console.WriteLine($"Config file not found '{configFileName}'");
+    Environment.Exit(1);
+}
 
+var rawConfig = await File.ReadAllTextAsync(configFileName);
 var deserializer = new DeserializerBuilder()
     .WithNamingConvention(UnderscoredNamingConvention.Instance)
     .Build();
-
 var config = deserializer.Deserialize<Config>(rawConfig);
+
+if (!config.Filters.ContainsKey(filterName))
+{
+    System.Console.WriteLine($"Unknown filter provided '{filterName}'");
+    Environment.Exit(1);
+}
 var filter = config.Filters[filterName];
 
 IIssuesService service = new YouTrackService(new()
@@ -32,7 +44,7 @@ var reporters = new IReporter[]
 
 var storage = new SnapshotStorage(filterName);
 
-if (args is not null && args.Contains("--snap"))
+if (shouldSnap)
 {
     System.Console.WriteLine("Creating snapshot...");
     var issues = await service.GetIssues();

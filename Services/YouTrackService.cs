@@ -65,7 +65,8 @@ public class YouTrackService : IIssuesService
 
     private static IssueState GetState(YouTrackSharp.Issues.Issue issue)
     {
-        var state = issue?.GetField("State")?.Value;
+        ArgumentNullException.ThrowIfNull(issue);
+        var state = issue.GetField("State")?.Value;
 
         if (state is IEnumerable<string> list)
         {

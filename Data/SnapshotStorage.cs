@@ -33,6 +33,11 @@ public class SnapshotStorage
             var json = await File.ReadAllTextAsync(file);
             var entities = JsonSerializer.Deserialize<IssueEntity[]>(json);
 
+            if (entities is null)
+            {
+                throw new InvalidOperationException($"Failed to deserialize, '{nameof(entities)}' is null");
+            }
+
             snapshots.Add(new Snapshot
             {
                 Timestamp = timestamp,
