@@ -65,20 +65,24 @@ else if (timeDiff > TimeSpan.FromHours(1))
 foreach (var reporter in reporters)
 {
     var observations = reporter.GetObservations(previous.Issues, current.Issues);
-    System.Console.WriteLine($"{reporter.GetType().Name} has {observations.Count()} observations");
-
     var grouped = observations.GroupBy(o => o.Issue);
 
     foreach (var group in grouped)
     {
-        System.Console.WriteLine($"    - {group.Key.Id}: {group.Key.Summary}");
-        var ass = group.Key.Assignee.IsSome ? group.Key.Assignee.Value.FullName : "nobody";
-        System.Console.WriteLine($"    - Assigned to {ass}");
+        var width = 69;
+        var maxLength = width - 1;
+        var assigned = group.Key.Assignee.IsSome ? "Assigned to " + group.Key.Assignee.Value.FullName : "Unassigned";
+        System.Console.WriteLine($"╔{"".PadRight(width + 1, '═')}╗");
+        System.Console.WriteLine($"║ {Truncate(group.Key.Summary, maxLength).PadRight(width)}║");
+        System.Console.WriteLine($"║ {assigned.PadRight(width)}║");
+        System.Console.WriteLine($"║ {group.Key.Url.ToString().PadRight(width)}║");
 
         foreach (var observation in group)
         {
-            System.Console.WriteLine($"      -> {observation.Text}");
+            System.Console.WriteLine($"║     -> {observation.Text.PadRight(width - 7)}║");
         }
+
+        System.Console.WriteLine($"╚{"".PadRight(width + 1, '═')}╝");
     }
 }
 
@@ -86,4 +90,11 @@ static void LogWarning(string message)
 {
     Console.WriteLine(message);
     Thread.Sleep(2000);
+}
+
+static string Truncate(string message, int maxLength)
+{
+    return message.Length > maxLength
+        ? message.Substring(0, maxLength - 3) + "..."
+        : message;
 }
