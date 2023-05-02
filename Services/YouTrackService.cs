@@ -22,12 +22,15 @@ public class YouTrackService : IIssuesService
 
     public async Task<IEnumerable<Models.Issue>> GetIssues()
     {
-        var limit = 999;
-        var issues = await _issuesService.Value.GetIssues(_configuration.Filter, take: limit);
+        var issues = new List<YouTrackSharp.Issues.Issue>();
+        var limit = 420;
+        var offset = 0;
 
-        if (issues.Count >= limit)
+        while (offset >= 0)
         {
-            throw new ArgumentOutOfRangeException($"Reached limit of {limit} with {issues.Count} issues");
+            var batch = await _issuesService.Value.GetIssues(_configuration.Filter, skip: offset, take: limit);
+            issues.AddRange(batch);
+            offset = batch.Count >= limit ? issues.Count : -1;
         }
 
         return issues.Select(i => new Models.Issue
@@ -45,33 +48,19 @@ public class YouTrackService : IIssuesService
 
     private static Option<TimeSpan> GetEtc(YouTrackSharp.Issues.Issue issue)
     {
-        var etc = issue?.GetField("ETC")?.Value;
-
-        if (etc is IEnumerable<string> list)
-        {
-            var etcString = list.SingleOrDefault();
-
-            if (etcString == null)
-            {
-                return Option<TimeSpan>.None();
-            }
-
-            var etcMinutes = int.Parse(etcString);
-            return Option<TimeSpan>.Some(TimeSpan.FromMinutes(etcMinutes));
-        }
-
-        return Option<TimeSpan>.None();
+        var etcString = GetSingleStringValue(issue, "ETC");
+        return etcString.IsSome
+            ? Option<TimeSpan>.Some(TimeSpan.FromMinutes(int.Parse(etcString.Value)))
+            : Option<TimeSpan>.None();
     }
 
     private static IssueState GetState(YouTrackSharp.Issues.Issue issue)
     {
-        ArgumentNullException.ThrowIfNull(issue);
-        var state = issue.GetField("State")?.Value;
+        var stateString = GetSingleStringValue(issue, "State");
 
-        if (state is IEnumerable<string> list)
+        if (stateString.IsSome)
         {
-            var stateString = list.SingleOrDefault();
-            return stateString switch
+            return stateString.Value switch
             {
                 "Not Ready" => IssueState.NotReady,
                 "Ready To Start" => IssueState.ReadyToStart,
@@ -105,42 +94,34 @@ public class YouTrackService : IIssuesService
 
     private static Option<TimeSpan> GetEstimate(YouTrackSharp.Issues.Issue issue)
     {
-        var estimate = issue?.GetField("Estimate")?.Value;
-
-        if (estimate is IEnumerable<string> list)
-        {
-            var estimateString = list.SingleOrDefault();
-
-            if (estimateString == null)
-            {
-                return Option<TimeSpan>.None();
-            }
-
-            var estimateMinutes = int.Parse(estimateString);
-            return Option<TimeSpan>.Some(TimeSpan.FromMinutes(estimateMinutes));
-        }
-
-        return Option<TimeSpan>.None();
+        var estimateString = GetSingleStringValue(issue, "Estimate");
+        return estimateString.IsSome
+            ? Option<TimeSpan>.Some(TimeSpan.FromMinutes(int.Parse(estimateString.Value)))
+            : Option<TimeSpan>.None();
     }
 
     private static Option<TimeSpan> GetTimeSpent(YouTrackSharp.Issues.Issue issue)
     {
-        var timeSpent = issue?.GetField("Time spent")?.Value;
-
-        if (timeSpent is IEnumerable<string> list)
-        {
-            var timeSpentString = list.SingleOrDefault();
-
-            if (timeSpentString == null)
-            {
-                return Option<TimeSpan>.None();
-            }
-
-            var timeSpentMinutes = int.Parse(timeSpentString);
-            return Option<TimeSpan>.Some(TimeSpan.FromMinutes(timeSpentMinutes));
-        }
-
-        return Option<TimeSpan>.None();
+        var timeSpentString = GetSingleStringValue(issue, "Time spent");
+        return timeSpentString.IsSome
+            ? Option<TimeSpan>.Some(TimeSpan.FromMinutes(int.Parse(timeSpentString.Value)))
+            : Option<TimeSpan>.None();
     }
 
+    private static Option<string> GetSingleStringValue(YouTrackSharp.Issues.Issue issue, string field)
+    {
+        var val = issue?.GetField(field)?.Value;
+
+        if (val is IEnumerable<string> list)
+        {
+            var stringVal = list.SingleOrDefault();
+
+            if (stringVal is not null)
+            {
+                return Option<string>.Some(stringVal);
+            }
+        }
+
+        return Option<string>.None();
+    }
 }
