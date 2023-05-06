@@ -12,6 +12,12 @@ public class SnapshotStorage
         _dataDirectory = Path.Combine($"{nameof(Scrummy)}{nameof(Scrummy.Data)}", filter);
     }
 
+    public void Clean()
+    {
+        var dir = EnsureDir();
+        Directory.Delete(dir, true);
+    }
+
     public async Task Store(Snapshot snapshot)
     {
         var entities = snapshot.Issues.Select(IssueEntity.From);

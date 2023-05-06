@@ -11,6 +11,7 @@ using YamlDotNet.Serialization.NamingConventions;
 var filterName = Cli.GetRequiredArgument(args, "filter");
 var configFileName = Cli.GetOptionalArgument(args, "config") ?? "config.yaml";
 var shouldSnap = Cli.HasFlag(args, "snap");
+var shouldClean = Cli.HasFlag(args, "clean");
 
 if (!File.Exists(configFileName))
 {
@@ -58,7 +59,8 @@ var issueAnalyzers = new IIssueAnalyzer[]
     new IncreasedEtcAnalyzer(),
     new IncreasedEstimateAnalyzer(),
     new TimeSpentChangedAndEtcDidNotAnalyzer(),
-    new StateChangeAnalyzer()
+    new StateChangeAnalyzer(),
+    new BlockedAnalyzer()
 };
 
 var snapshotAnalyzers = new ISnapshotAnalyzer[]
@@ -68,6 +70,13 @@ var snapshotAnalyzers = new ISnapshotAnalyzer[]
 };
 
 var storage = new SnapshotStorage(filterName);
+
+if (shouldClean)
+{
+    stopTimer = Cli.TimedLog($"Cleaning '{filterName}' storage");
+    storage.Clean();
+    stopTimer();
+}
 
 if (shouldSnap)
 {
