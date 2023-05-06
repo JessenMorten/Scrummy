@@ -1,7 +1,9 @@
 ﻿using Scrummy;
+using Scrummy.Analysis;
+using Scrummy.Analysis.IssueAnalyzers;
+using Scrummy.Analysis.SnapshotAnalyzers;
 using Scrummy.Data;
 using Scrummy.Models;
-using Scrummy.Reporters;
 using Scrummy.Services;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -12,51 +14,81 @@ var shouldSnap = Cli.HasFlag(args, "snap");
 
 if (!File.Exists(configFileName))
 {
-    System.Console.WriteLine($"Config file not found '{configFileName}'");
+    Cli.Error($"Config file not found '{configFileName}'");
     Environment.Exit(1);
 }
 
+var stopTimer = Cli.TimedLog($"Reading {configFileName}");
 var rawConfig = await File.ReadAllTextAsync(configFileName);
+stopTimer();
+
+stopTimer = Cli.TimedLog("Deserializing config");
 var deserializer = new DeserializerBuilder()
     .WithNamingConvention(UnderscoredNamingConvention.Instance)
     .Build();
 var config = deserializer.Deserialize<Config>(rawConfig);
+stopTimer();
 
 if (!config.Filters.ContainsKey(filterName))
 {
-    System.Console.WriteLine($"Unknown filter provided '{filterName}'");
+    Cli.Error($"Unknown filter provided '{filterName}'");
     Environment.Exit(1);
 }
 var filter = config.Filters[filterName];
 
-IIssuesService service = new YouTrackService(new()
+var service = new YouTrackService(new()
 {
     Url = config.ApiUrl,
     Token = config.ApiToken,
     Filter = filter
 });
 
-var reporters = new IReporter[]
+var issueAnalyzers = new IIssueAnalyzer[]
 {
-    new IllegalIssueStateReporter(),
-    new NewsReporter()
+    new HighEtcAnalyzer(),
+    new NoEtcAnalyzer(),
+    new InProgressAndUnassignedAnalyzer(),
+    new IsDoneAndHasEtcAnalyzer(),
+    new IsNotDoneAndHasZeroEtcAnalyzer(),
+    new UnassignedAnalyzer(),
+    new ReassignedAnalyzer(),
+    new AssignedAnalyzer(),
+    new AddedAnalyzer(),
+    new RemovedAnalyzer(),
+    new IncreasedEtcAnalyzer(),
+    new IncreasedEstimateAnalyzer(),
+    new TimeSpentChangedAndEtcDidNotAnalyzer(),
+    new StateChangeAnalyzer()
+};
+
+var snapshotAnalyzers = new ISnapshotAnalyzer[]
+{
+    new HighestEtcAnalyzer(),
+    new LowestEtcAnalyzer()
 };
 
 var storage = new SnapshotStorage(filterName);
 
 if (shouldSnap)
 {
-    System.Console.WriteLine("Creating snapshot...");
+    stopTimer = Cli.TimedLog("Fetching issues");
     var issues = await service.GetIssues();
+    stopTimer();
+
     var snapshot = new Snapshot { Timestamp = DateTime.Now, Issues = issues };
+
+    stopTimer = Cli.TimedLog("Storing snapshot");
     await storage.Store(snapshot);
+    stopTimer();
 }
 
+stopTimer = Cli.TimedLog("Loading all snapshots");
 var snapshots = await storage.Load();
+stopTimer();
 
 if (!snapshots.Any())
 {
-    LogWarning("There are no snapshots. Create a new snapshot with the --snap flag.");
+    Cli.Warn("There are no snapshots. Create a new snapshot with the --snap flag.");
     Environment.Exit(0);
 }
 
@@ -67,46 +99,59 @@ var timeDiff = DateTime.Now - current.Timestamp;
 
 if (snapshots.Count() == 1)
 {
-    LogWarning("Only 1 snapshot exists, create a another snapshot using the --snap flag.");
+    Cli.Warn("Only 1 snapshot exists, create a another snapshot using the --snap flag.");
 }
 else if (timeDiff > TimeSpan.FromHours(1))
 {
-    LogWarning($"Newest snapshot is more than {(int)timeDiff.TotalHours}h old, create a new snapshot using the --snap flag.");
+    Cli.Warn($"Newest snapshot is more than {(int)timeDiff.TotalHours}h old, create a new snapshot using the --snap flag.");
 }
 
-foreach (var reporter in reporters)
+var results = new List<IAnalysisResult>();
+
+var distinctIssueIds = current.Issues.Concat(previous.Issues).Select(i => i.Id).Distinct();
+stopTimer = Cli.TimedLog($"Analyzing {distinctIssueIds.Count()} issues with {issueAnalyzers.Length} issue analyzers");
+foreach (var issueId in distinctIssueIds)
 {
-    var observations = reporter.GetObservations(previous.Issues, current.Issues);
-    var grouped = observations.GroupBy(o => o.Issue);
+    var currentIssue = current.Issues.SingleOrDefault(i => i.Id == issueId);
+    var previousIssue = previous.Issues.SingleOrDefault(i => i.Id == issueId);
+    var currentIssueOption = currentIssue is null ? Option<Issue>.None() : Option<Issue>.Some(currentIssue);
+    var previousIssueOption = previousIssue is null ? Option<Issue>.None() : Option<Issue>.Some(previousIssue);
 
-    foreach (var group in grouped)
+    foreach (var analyzer in issueAnalyzers)
     {
-        var width = 69;
-        var maxLength = width - 1;
-        var assigned = group.Key.Assignee.IsSome ? "Assigned to " + group.Key.Assignee.Value.FullName : "Unassigned";
-        System.Console.WriteLine($"╔{"".PadRight(width + 1, '═')}╗");
-        System.Console.WriteLine($"║ {Truncate(group.Key.Summary, maxLength).PadRight(width)}║");
-        System.Console.WriteLine($"║ {assigned.PadRight(width)}║");
-        System.Console.WriteLine($"║ {group.Key.Url.ToString().PadRight(width)}║");
-
-        foreach (var observation in group)
+        var result = analyzer.Analyze(previousIssueOption, currentIssueOption);
+        if (result.IsSome)
         {
-            System.Console.WriteLine($"║     -> {observation.Text.PadRight(width - 7)}║");
+            results.Add(result.Value);
         }
-
-        System.Console.WriteLine($"╚{"".PadRight(width + 1, '═')}╝");
     }
 }
+stopTimer();
 
-static void LogWarning(string message)
+stopTimer = Cli.TimedLog($"Analyzing 2 snapshots with {snapshotAnalyzers.Length} snapshot analyzers");
+foreach (var analyzer in snapshotAnalyzers)
 {
-    Console.WriteLine(message);
-    Thread.Sleep(2000);
+    var result = analyzer.Analyze(previous, current);
+    if (result.IsSome)
+    {
+        results.Add(result.Value);
+    }
 }
+stopTimer();
 
-static string Truncate(string message, int maxLength)
+foreach (var groupedResults in results.GroupBy(r => r.RelatedTo))
 {
-    return message.Length > maxLength
-        ? message.Substring(0, maxLength - 3) + "..."
-        : message;
+    Cli.Log("\n" + groupedResults.Key);
+
+    foreach (var r in groupedResults)
+    {
+        Action<string> log = r.Severity switch
+        {
+            Severity.Info => Cli.Info,
+            Severity.Warning => Cli.Warn,
+            _ => throw new NotSupportedException($"Unexpected severity '{r.Severity}'")
+        };
+
+        log("    - " + r.Text);
+    }
 }

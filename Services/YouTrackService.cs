@@ -5,7 +5,7 @@ using YouTrackSharp.Issues;
 
 namespace Scrummy.Services;
 
-public class YouTrackService : IIssuesService
+public class YouTrackService
 {
     private readonly YouTrackServiceConfiguration _configuration;
 

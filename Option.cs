@@ -29,4 +29,14 @@ public class Option<T>
     {
         return IsSome ? some(Value) : none();
     }
+
+    public R MatchOr<R>(Func<T, R> some, R noneValue)
+    {
+        return IsSome ? some(Value) : noneValue;
+    }
+
+    public T SomeOr(T noneValue)
+    {
+        return IsSome ? Value : noneValue;
+    }
 }
