@@ -19,4 +19,6 @@ public class Issue
     public required Option<TimeSpan> TimeSpent { get; init; }
 
     public required IssueState State { get; init; }
+
+    public required bool IsBlocked { get; init; }
 }

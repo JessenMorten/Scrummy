@@ -42,7 +42,8 @@ public class YouTrackService
             Etc = GetEtc(i),
             Estimate = GetEstimate(i),
             TimeSpent = GetTimeSpent(i),
-            State = GetState(i)
+            State = GetState(i),
+            IsBlocked = HasTag(i, "blocked", "waiting", "needs more info")
         });
     }
 
@@ -123,5 +124,21 @@ public class YouTrackService
         }
 
         return Option<string>.None();
+    }
+
+    private static bool HasTag(YouTrackSharp.Issues.Issue issue, params string[] tags)
+    {
+        var testTags = tags.Select(t => t.ToUpperInvariant());
+        var issueTags = issue.Tags.Select(t => t.Value.ToUpperInvariant());
+
+        foreach (var testTag in testTags)
+        {
+            if (issueTags.Any(issueTag => issueTag.Contains(testTag)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -22,6 +22,8 @@ public class IssueEntity
 
     public int State { get; init; }
 
+    public bool IsBlocked { get; init; }
+
     public static IssueEntity From(Issue issue)
     {
         return new IssueEntity
@@ -34,7 +36,8 @@ public class IssueEntity
             Etc = issue.Etc.Match<double?>(e => e.TotalHours, () => null),
             Estimate = issue.Estimate.Match<double?>(e => e.TotalHours, () => null),
             TimeSpent = issue.TimeSpent.Match<double?>(e => e.TotalHours, () => null),
-            State = (int)issue.State
+            State = (int)issue.State,
+            IsBlocked = issue.IsBlocked
         };
     }
 
@@ -65,7 +68,8 @@ public class IssueEntity
             Etc = etc,
             Estimate = estimate,
             TimeSpent = timeSpent,
-            State = (IssueState)State
+            State = (IssueState)State,
+            IsBlocked = IsBlocked
         };
     }
 }
