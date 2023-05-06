@@ -66,7 +66,8 @@ var issueAnalyzers = new IIssueAnalyzer[]
 var snapshotAnalyzers = new ISnapshotAnalyzer[]
 {
     new HighestEtcAnalyzer(),
-    new LowestEtcAnalyzer()
+    new LowestEtcAnalyzer(),
+    new PercentBlockedAnalyzer()
 };
 
 var storage = new SnapshotStorage(filterName);
