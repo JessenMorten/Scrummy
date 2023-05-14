@@ -4,8 +4,6 @@ namespace Scrummy.Analysis.IssueAnalyzers;
 
 public class NoEtcAnalyzer : IIssueAnalyzer
 {
-    private static readonly TimeSpan _highEtcThreshold = TimeSpan.FromHours(28);
-
     public Option<IAnalysisResult> Analyze(Option<Issue> previous, Option<Issue> current)
     {
         if (current.IsNone || current.Value.Etc.IsSome)
