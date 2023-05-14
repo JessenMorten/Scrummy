@@ -15,17 +15,17 @@ public class TotalEstimateAnalyzer : ISnapshotAnalyzer
         if (diff == 0.0)
         {
             severity = Severity.Info;
-            message = $"total estimate is still {currentTotalEstimate.TotalHours}h";
+            message = $"Total estimate is still {currentTotalEstimate.TotalHours}h";
         }
         else if (diff > 0.0)
         {
             severity = Severity.Warning;
-            message = $"total estimate increased with {diff}h, from {previousTotalEstimate.TotalHours}h to {currentTotalEstimate.TotalHours}h";
+            message = $"Total estimate increased with {diff}h, from {previousTotalEstimate.TotalHours}h to {currentTotalEstimate.TotalHours}h";
         }
         else
         {
             severity = Severity.Info;
-            message = $"total estimate decreased with {Math.Abs(diff)}h, from {previousTotalEstimate.TotalHours}h to {currentTotalEstimate.TotalHours}h";
+            message = $"Total estimate decreased with {Math.Abs(diff)}h, from {previousTotalEstimate.TotalHours}h to {currentTotalEstimate.TotalHours}h";
         }
 
         var result = new StatisticResult(message, severity);

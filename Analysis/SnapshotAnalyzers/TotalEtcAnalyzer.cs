@@ -15,17 +15,17 @@ public class TotalEtcAnalyzer : ISnapshotAnalyzer
         if (diff == 0.0)
         {
             severity = Severity.Info;
-            message = $"total ETC is still {currentTotalEtc.TotalHours}h";
+            message = $"Total ETC is still {currentTotalEtc.TotalHours}h";
         }
         else if (diff > 0.0)
         {
             severity = Severity.Warning;
-            message = $"total ETC increased with {diff}h, from {previousTotalEtc.TotalHours}h to {currentTotalEtc.TotalHours}h";
+            message = $"Total ETC increased with {diff}h, from {previousTotalEtc.TotalHours}h to {currentTotalEtc.TotalHours}h";
         }
         else
         {
             severity = Severity.Info;
-            message = $"total ETC decreased with {Math.Abs(diff)}h, from {previousTotalEtc.TotalHours}h to {currentTotalEtc.TotalHours}h";
+            message = $"Total ETC decreased with {Math.Abs(diff)}h, from {previousTotalEtc.TotalHours}h to {currentTotalEtc.TotalHours}h";
         }
 
         var result = new StatisticResult(message, severity);
