@@ -68,7 +68,8 @@ var snapshotAnalyzers = new ISnapshotAnalyzer[]
     new HighestEtcAnalyzer(),
     new LowestEtcAnalyzer(),
     new PercentBlockedAnalyzer(),
-    new TotalEstimateAnalyzer()
+    new TotalEstimateAnalyzer(),
+    new TotalEtcAnalyzer()
 };
 
 var storage = new SnapshotStorage(filterName);
