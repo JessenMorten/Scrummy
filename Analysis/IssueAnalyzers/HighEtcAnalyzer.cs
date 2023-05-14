@@ -4,7 +4,7 @@ namespace Scrummy.Analysis.IssueAnalyzers;
 
 public class HighEtcAnalyzer : IIssueAnalyzer
 {
-    private static readonly TimeSpan _highEtcThreshold = TimeSpan.FromHours(28);
+    private static readonly TimeSpan _highEtcThreshold = TimeSpan.FromHours(37);
 
     public Option<IAnalysisResult> Analyze(Option<Issue> previous, Option<Issue> current)
     {
