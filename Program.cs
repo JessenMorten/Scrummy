@@ -60,7 +60,8 @@ var issueAnalyzers = new IIssueAnalyzer[]
     new IncreasedEstimateAnalyzer(),
     new TimeSpentChangedAndEtcDidNotAnalyzer(),
     new StateChangeAnalyzer(),
-    new BlockedAnalyzer()
+    new BlockedAnalyzer(),
+    new NoEstimateAnalyzer()
 };
 
 var snapshotAnalyzers = new ISnapshotAnalyzer[]
