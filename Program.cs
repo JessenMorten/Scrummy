@@ -61,7 +61,8 @@ var issueAnalyzers = new IIssueAnalyzer[]
     new TimeSpentChangedAndEtcDidNotAnalyzer(),
     new StateChangeAnalyzer(),
     new BlockedAnalyzer(),
-    new NoEstimateAnalyzer()
+    new NoEstimateAnalyzer(),
+    new SummaryChangedAnalyzer()
 };
 
 var snapshotAnalyzers = new ISnapshotAnalyzer[]
