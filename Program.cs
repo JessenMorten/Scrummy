@@ -11,6 +11,7 @@ using YamlDotNet.Serialization.NamingConventions;
 var filterName = Cli.GetRequiredArgument(args, "filter");
 var configFileName = Cli.GetOptionalArgument(args, "config") ?? "config.yaml";
 var shouldSnap = Cli.HasFlag(args, "snap");
+var shouldPeek = Cli.HasFlag(args, "peek");
 var shouldClean = Cli.HasFlag(args, "clean");
 
 if (!File.Exists(configFileName))
@@ -84,22 +85,26 @@ if (shouldClean)
     stopTimer();
 }
 
-if (shouldSnap)
+stopTimer = Cli.TimedLog("Loading all snapshots");
+var snapshots = (await storage.Load()).ToList();
+stopTimer();
+
+if (shouldPeek || shouldSnap)
 {
     stopTimer = Cli.TimedLog("Fetching issues");
     var issues = await service.GetIssues();
     stopTimer();
 
     var snapshot = new Snapshot { Timestamp = DateTime.Now, Issues = issues };
+    snapshots.Add(snapshot);
 
-    stopTimer = Cli.TimedLog("Storing snapshot");
-    await storage.Store(snapshot);
-    stopTimer();
+    if (shouldSnap)
+    {
+        stopTimer = Cli.TimedLog("Storing snapshot");
+        await storage.Store(snapshot);
+        stopTimer();
+    }
 }
-
-stopTimer = Cli.TimedLog("Loading all snapshots");
-var snapshots = await storage.Load();
-stopTimer();
 
 if (!snapshots.Any())
 {
