@@ -59,7 +59,7 @@ var issueAnalyzers = new IIssueAnalyzer[]
     new RemovedAnalyzer(),
     new IncreasedEtcAnalyzer(),
     new IncreasedEstimateAnalyzer(),
-    new TimeSpentChangedAndEtcDidNotAnalyzer(),
+    new TimeSpentVersusEtcAnalyzer(),
     new StateChangeAnalyzer(),
     new BlockedAnalyzer(),
     new NoEstimateAnalyzer(),
