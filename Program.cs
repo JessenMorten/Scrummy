@@ -8,7 +8,14 @@ using Scrummy.Services;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-var filterName = Cli.GetRequiredArgument(args, "filter");
+var filterName = args.FirstOrDefault();
+
+if (string.IsNullOrWhiteSpace(filterName))
+{
+    Cli.Error("No filter provided");
+    Environment.Exit(1);
+}
+
 var configFileName = Cli.GetOptionalArgument(args, "config") ?? "config.yaml";
 var shouldSnap = Cli.HasFlag(args, "snap");
 var shouldPeek = Cli.HasFlag(args, "peek");
