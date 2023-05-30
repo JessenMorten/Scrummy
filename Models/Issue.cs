@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Scrummy.Models;
 
 public class Issue

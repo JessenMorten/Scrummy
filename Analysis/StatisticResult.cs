@@ -1,5 +1,3 @@
-using Scrummy.Models;
-
 namespace Scrummy.Analysis;
 
 public class StatisticResult : IAnalysisResult

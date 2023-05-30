@@ -1,5 +1,3 @@
-using Scrummy.Models;
-
 namespace Scrummy.Models;
 
 public class Snapshot
