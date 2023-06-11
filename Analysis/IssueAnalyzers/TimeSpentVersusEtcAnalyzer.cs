@@ -26,7 +26,9 @@ public class TimeSpentVersusEtcAnalyzer : IIssueAnalyzer
             return Option<IAnalysisResult>.Some(new IssueResult(current.Value, text, Severity.Warning));
         }
 
-        if (timeSpentDiff > 0 && etcDiff < timeSpentDiff)
+        var wasResolved = previous.Value.State != IssueState.Done && current.Value.State == IssueState.Done;
+
+        if (timeSpentDiff > 0 && etcDiff < timeSpentDiff && !wasResolved)
         {
             var text = $"time spent increased with {timeSpentDiff}h, but ETC only decreased with {etcDiff}h";
             return Option<IAnalysisResult>.Some(new IssueResult(current.Value, text, Severity.Warning));
